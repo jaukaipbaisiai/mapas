@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        #map { height: 70vh; width: 100%; }
+        #map { height: 60vh; width: 100%; }
         #editor { padding: 10px; }
     </style>
 </head>
@@ -39,6 +39,7 @@
         <label>Sub Category: <input type="text" id="lot-subcategory"></label><br>
         <label>Name: <input type="text" id="lot-name"></label><br>
         <button onclick="saveChanges()">Save Changes</button>
+        <button onclick="downloadGeoJSON()">Download JSON File</button>
     </div>
     
     <script>
@@ -48,7 +49,7 @@
         let map = L.map('map').setView([11.575, -86.244], 16);
         let baseLayers = {
             'Street View': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-            'Satellite View': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png')
+            'Satellite View': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png')
         };
         baseLayers['Street View'].addTo(map);
         L.control.layers(baseLayers).addTo(map);
@@ -117,6 +118,18 @@
             selectedFeature.properties.Name = document.getElementById('lot-name').value;
             
             localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
+        }
+
+        function downloadGeoJSON() {
+            const updatedGeoJSON = JSON.stringify(geojsonData, null, 4);
+            const blob = new Blob([updatedGeoJSON], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lots_updated.geojson';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
     </script>
 </body>
