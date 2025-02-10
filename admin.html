@@ -45,6 +45,7 @@
     <script>
         let geojsonData;
         let selectedFeature;
+        let selectedLayer;
         let map = L.map('map').setView([11.575, -86.244], 16);
         let baseLayers = {
             'Street View': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
@@ -57,8 +58,17 @@
             const response = await fetch('lots.geojson');
             geojsonData = await response.json();
             L.geoJSON(geojsonData, {
+                style: function () {
+                    return { color: "blue", weight: 2 };
+                },
                 onEachFeature: function (feature, layer) {
                     layer.on('click', function () {
+                        if (selectedLayer) {
+                            selectedLayer.setStyle({ color: "blue" });
+                        }
+                        selectedLayer = layer;
+                        layer.setStyle({ color: "red" });
+                        
                         selectedFeature = feature;
                         document.getElementById('editor').style.display = 'block';
                         document.getElementById('lot-id').innerText = feature.properties.plot_id;
