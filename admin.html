@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        #map { height: 500px; }
+        #map { height: 80vh; width: 100%; }
         #editor { padding: 10px; }
     </style>
 </head>
@@ -25,6 +25,19 @@
                 <option value="Reserved">Reserved</option>
             </select>
         </label><br>
+        <label>Area: <input type="text" id="lot-area"></label><br>
+        <label>Category:
+            <select id="lot-category">
+                <option value="Single Family Homesites">Single Family Homesites</option>
+                <option value="Multi Family Homesites">Multi Family Homesites</option>
+                <option value="Commercial">Commercial</option>
+                <option value="Mixed Use">Mixed Use</option>
+            </select>
+        </label><br>
+        <label>Parking: <input type="text" id="lot-parking"></label><br>
+        <label>Units: <input type="text" id="lot-units"></label><br>
+        <label>Sub Category: <input type="text" id="lot-subcategory"></label><br>
+        <label>Name: <input type="text" id="lot-name"></label><br>
         <button onclick="saveChanges()">Save Changes</button>
     </div>
     
@@ -32,7 +45,12 @@
         let geojsonData;
         let selectedFeature;
         let map = L.map('map').setView([11.575, -86.244], 16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let baseLayers = {
+            'Street View': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+            'Satellite View': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png')
+        };
+        baseLayers['Street View'].addTo(map);
+        L.control.layers(baseLayers).addTo(map);
 
         async function loadGeoJSON() {
             const response = await fetch('lots.geojson');
@@ -45,6 +63,12 @@
                         document.getElementById('lot-id').innerText = feature.properties.plot_id;
                         document.getElementById('lot-price').value = feature.properties.price || '';
                         document.getElementById('lot-status').value = feature.properties.status || 'For Sale';
+                        document.getElementById('lot-area').value = feature.properties.area_m || '';
+                        document.getElementById('lot-category').value = feature.properties.Category || 'Single Family Homesites';
+                        document.getElementById('lot-parking').value = feature.properties.Parking || 'N/A';
+                        document.getElementById('lot-units').value = feature.properties.Units || '1';
+                        document.getElementById('lot-subcategory').value = feature.properties.Sub_Cat || '';
+                        document.getElementById('lot-name').value = feature.properties.Name || '';
                     });
                 }
             }).addTo(map);
@@ -55,6 +79,12 @@
 
             selectedFeature.properties.price = document.getElementById('lot-price').value;
             selectedFeature.properties.status = document.getElementById('lot-status').value;
+            selectedFeature.properties.area_m = document.getElementById('lot-area').value;
+            selectedFeature.properties.Category = document.getElementById('lot-category').value;
+            selectedFeature.properties.Parking = document.getElementById('lot-parking').value;
+            selectedFeature.properties.Units = document.getElementById('lot-units').value;
+            selectedFeature.properties.Sub_Cat = document.getElementById('lot-subcategory').value;
+            selectedFeature.properties.Name = document.getElementById('lot-name').value;
 
             const updatedGeoJSON = JSON.stringify(geojsonData, null, 4);
             const blob = new Blob([updatedGeoJSON], { type: 'application/json' });
