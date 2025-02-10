@@ -11,7 +11,7 @@
         #editor { padding: 10px; }
     </style>
 </head>
-<body>
+<body onload="initializeMap()">
     <h2>GeoJSON Admin Panel with Interactive Map</h2>
     <input type="file" id="fileInput" accept=".geojson" onchange="loadFile(event)">
     <button onclick="downloadGeoJSON()">Download JSON File</button>
@@ -47,15 +47,28 @@
         let geojsonData;
         let selectedFeature;
         let selectedLayer;
-        let map = L.map('map').setView([11.575, -86.244], 16);
-        let baseLayers = {
-            'Street View': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-            'Satellite View': L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-            })
-        };
-        baseLayers['Street View'].addTo(map);
-        L.control.layers(baseLayers).addTo(map);
+        let map;
+
+        function initializeMap() {
+            map = L.map('map').setView([11.575, -86.244], 16);
+            let baseLayers = {
+                'Street View': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map),
+                'Satellite View': L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+                })
+            };
+            L.control.layers(baseLayers).addTo(map);
+            loadDefaultGeoJSON();
+        }
+
+        function loadDefaultGeoJSON() {
+            fetch('lots.geojson')
+                .then(response => response.json())
+                .then(data => {
+                    geojsonData = data;
+                    loadGeoJSON();
+                });
+        }
 
         function getLotColor(status) {
             switch (status) {
@@ -72,7 +85,6 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 geojsonData = JSON.parse(e.target.result);
-                localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
                 loadGeoJSON();
             };
             reader.readAsText(file);
@@ -124,8 +136,6 @@
             selectedFeature.properties.Units = document.getElementById('lot-units').value;
             selectedFeature.properties.Sub_Cat = document.getElementById('lot-subcategory').value;
             selectedFeature.properties.Name = document.getElementById('lot-name').value;
-            
-            localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
         }
 
         function downloadGeoJSON() {
