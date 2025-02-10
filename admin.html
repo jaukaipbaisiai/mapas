@@ -11,8 +11,10 @@
         #editor { padding: 10px; }
     </style>
 </head>
-<body onload="loadGeoJSON()">
-    <h2>COSTADENICOS ZEMELAPIO IRANKIS</h2>
+<body>
+    <h2>GeoJSON Admin Panel with Interactive Map</h2>
+    <input type="file" id="fileInput" accept=".geojson" onchange="loadFile(event)">
+    <button onclick="downloadGeoJSON()">Download JSON File</button>
     <div id="map"></div>
     <div id="editor" style="display:none;">
         <h3>Edit Lot</h3>
@@ -39,7 +41,6 @@
         <label>Sub Category: <input type="text" id="lot-subcategory"></label><br>
         <label>Name: <input type="text" id="lot-name"></label><br>
         <button onclick="saveChanges()">Save Changes</button>
-        <button onclick="downloadGeoJSON()">Download JSON File</button>
     </div>
     
     <script>
@@ -66,18 +67,23 @@
             }
         }
 
+        function loadFile(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                geojsonData = JSON.parse(e.target.result);
+                localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
+                loadGeoJSON();
+            };
+            reader.readAsText(file);
+        }
+
         function loadGeoJSON() {
-            const savedData = localStorage.getItem('geojsonData');
-            if (savedData) {
-                geojsonData = JSON.parse(savedData);
-            } else {
-                fetch('lots.geojson')
-                    .then(response => response.json())
-                    .then(data => {
-                        geojsonData = data;
-                        localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
-                    });
-            }
+            map.eachLayer(layer => {
+                if (layer instanceof L.GeoJSON) {
+                    map.removeLayer(layer);
+                }
+            });
             
             L.geoJSON(geojsonData, {
                 style: function (feature) {
