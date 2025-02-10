@@ -39,7 +39,6 @@
         <label>Sub Category: <input type="text" id="lot-subcategory"></label><br>
         <label>Name: <input type="text" id="lot-name"></label><br>
         <button onclick="saveChanges()">Save Changes</button>
-        <button onclick="downloadGeoJSON()">Download JSON File</button>
     </div>
     
     <script>
@@ -64,9 +63,19 @@
             }
         }
 
-        async function loadGeoJSON() {
-            const response = await fetch('lots.geojson');
-            geojsonData = await response.json();
+        function loadGeoJSON() {
+            const savedData = localStorage.getItem('geojsonData');
+            if (savedData) {
+                geojsonData = JSON.parse(savedData);
+            } else {
+                fetch('lots.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        geojsonData = data;
+                        localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
+                    });
+            }
+            
             L.geoJSON(geojsonData, {
                 style: function (feature) {
                     return { color: getLotColor(feature.properties.status), weight: 2 };
@@ -106,18 +115,8 @@
             selectedFeature.properties.Units = document.getElementById('lot-units').value;
             selectedFeature.properties.Sub_Cat = document.getElementById('lot-subcategory').value;
             selectedFeature.properties.Name = document.getElementById('lot-name').value;
-        }
-
-        function downloadGeoJSON() {
-            const updatedGeoJSON = JSON.stringify(geojsonData, null, 4);
-            const blob = new Blob([updatedGeoJSON], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'lots_updated.geojson';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            
+            localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
         }
     </script>
 </body>
