@@ -3,44 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoJSON Admin Panel</title>
+    <title>GeoJSON Admin Panel with Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        #map { height: 500px; }
+        #editor { padding: 10px; }
+    </style>
+</head>
+<body onload="loadGeoJSON()">
+    <h2>GeoJSON Admin Panel with Interactive Map</h2>
+    <div id="map"></div>
+    <div id="editor" style="display:none;">
+        <h3>Edit Lot</h3>
+        <p><strong>Lot ID:</strong> <span id="lot-id"></span></p>
+        <label>Price: $<input type="text" id="lot-price"></label><br>
+        <label>Status:
+            <select id="lot-status">
+                <option value="For Sale">For Sale</option>
+                <option value="Sold">Sold</option>
+                <option value="Reserved">Reserved</option>
+            </select>
+        </label><br>
+        <button onclick="saveChanges()">Save Changes</button>
+    </div>
+    
     <script>
         let geojsonData;
+        let selectedFeature;
+        let map = L.map('map').setView([11.575, -86.244], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         async function loadGeoJSON() {
-            const response = await fetch('lots.geojson'); // Ensure this file is accessible on your server
+            const response = await fetch('lots.geojson');
             geojsonData = await response.json();
-            displayLots();
-        }
-
-        function displayLots() {
-            const container = document.getElementById('lotsContainer');
-            container.innerHTML = '';
-            geojsonData.features.forEach((feature, index) => {
-                const lot = feature.properties;
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div style="border:1px solid #ccc; padding:10px; margin:5px;">
-                        <strong>Lot ID: ${lot.plot_id}</strong><br>
-                        <label>Price: $<input type="text" value="${lot.price}" id="price-${index}"></label><br>
-                        <label>Status: 
-                            <select id="status-${index}">
-                                <option value="For Sale" ${lot.status === "For Sale" ? "selected" : ""}>For Sale</option>
-                                <option value="Sold" ${lot.status === "Sold" ? "selected" : ""}>Sold</option>
-                                <option value="Reserved" ${lot.status === "Reserved" ? "selected" : ""}>Reserved</option>
-                            </select>
-                        </label>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+            L.geoJSON(geojsonData, {
+                onEachFeature: function (feature, layer) {
+                    layer.on('click', function () {
+                        selectedFeature = feature;
+                        document.getElementById('editor').style.display = 'block';
+                        document.getElementById('lot-id').innerText = feature.properties.plot_id;
+                        document.getElementById('lot-price').value = feature.properties.price || '';
+                        document.getElementById('lot-status').value = feature.properties.status || 'For Sale';
+                    });
+                }
+            }).addTo(map);
         }
 
         function saveChanges() {
-            geojsonData.features.forEach((feature, index) => {
-                feature.properties.price = document.getElementById(`price-${index}`).value;
-                feature.properties.status = document.getElementById(`status-${index}`).value;
-            });
+            if (!selectedFeature) return;
+
+            selectedFeature.properties.price = document.getElementById('lot-price').value;
+            selectedFeature.properties.status = document.getElementById('lot-status').value;
 
             const updatedGeoJSON = JSON.stringify(geojsonData, null, 4);
             const blob = new Blob([updatedGeoJSON], { type: 'application/json' });
@@ -53,10 +67,5 @@
             document.body.removeChild(a);
         }
     </script>
-</head>
-<body onload="loadGeoJSON()">
-    <h2>GeoJSON Admin Panel</h2>
-    <div id="lotsContainer"></div>
-    <button onclick="saveChanges()">Save Changes</button>
 </body>
 </html>
